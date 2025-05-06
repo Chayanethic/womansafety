@@ -16,7 +16,8 @@ if (!accountSid || !authToken || !twilioNumber) {
 
 // Predefined recipient numbers (replace with actual numbers in E.164 format)
 const recipientNumbers = [
-    '+919883995198'
+    '+1234567890',
+    '+0987654321'
 ];
 
 // Default message if no custom message is provided
@@ -27,8 +28,18 @@ const client = twilio(accountSid, authToken);
 app.use(express.json());
 app.use(express.static('public')); // Serve static files from 'public' folder
 
+// Debug middleware to log incoming requests
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
+
 app.post('/api/send-sms', async (req, res) => {
     const { message, location, mapsUrl } = req.body;
+
+    if (!message && !defaultMessage) {
+        return res.status(400).json({ error: 'Message is required' });
+    }
 
     const finalMessage = (message || defaultMessage) + ` ${location} Map: ${mapsUrl}`;
 
@@ -43,13 +54,17 @@ app.post('/api/send-sms', async (req, res) => {
         await Promise.all(promises);
         res.status(200).json({ success: true });
     } catch (error) {
-        console.error('SMS Error:', error);
+        console.error('SMS Error:', error.message);
         res.status(500).json({ error: `Failed to send SMS: ${error.message}` });
     }
 });
 
 app.post('/api/make-call', async (req, res) => {
     const { message, location, mapsUrl } = req.body;
+
+    if (!message && !defaultMessage) {
+        return res.status(400).json({ error: 'Message is required' });
+    }
 
     const finalMessage = (message || defaultMessage) + ` Location: ${location}. View on Google Maps at ${mapsUrl.replace('https://', '')}.`;
 
@@ -64,14 +79,19 @@ app.post('/api/make-call', async (req, res) => {
         await Promise.all(promises);
         res.status(200).json({ success: true });
     } catch (error) {
-        console.error('Call Error:', error);
+        console.error('Call Error:', error.message);
         res.status(500).json({ error: `Failed to initiate call: ${error.message}` });
     }
 });
 
 // Health check endpoint for debugging
 app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'Server is running' });
+    res.status(200).json({ status: 'Server is running', timestamp: new Date().toISOString() });
+});
+
+// Catch-all for undefined routes
+app.use((req, res) => {
+    res.status(404).json({ error: 'Route not found' });
 });
 
 module.exports = app;

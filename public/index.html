@@ -147,8 +147,8 @@
                 // Log response for debugging
                 if (!smsResponse.ok) {
                     const text = await smsResponse.text();
-                    console.error('SMS Response:', text);
-                    throw new Error(`SMS request failed: ${smsResponse.status}`);
+                    console.error('SMS Response:', smsResponse.status, text);
+                    throw new Error(`SMS request failed: ${smsResponse.status} - ${text}`);
                 }
 
                 // Send Call
@@ -163,8 +163,8 @@
                 // Log response for debugging
                 if (!callResponse.ok) {
                     const text = await callResponse.text();
-                    console.error('Call Response:', text);
-                    throw new Error(`Call request failed: ${callResponse.status}`);
+                    console.error('Call Response:', callResponse.status, text);
+                    throw new Error(`Call request failed: ${callResponse.status} - ${text}`);
                 }
 
                 const smsResult = await smsResponse.json();
