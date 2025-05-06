@@ -19,14 +19,9 @@ if (!accountSid || !authToken || !twilioNumber) {
 }
 
 // Predefined recipient numbers (replace with actual numbers in E.164 format)
-<<<<<<< HEAD
 const recipientNumbers = process.env.RECIPIENT_NUMBERS ? process.env.RECIPIENT_NUMBERS.split(',') : [
     '+919883995198'
-=======
-const recipientNumbers = [
-    '+919883995198"
->>>>>>> c416ecd2ab61c6045abead9f69aa38a3e15c8362
-];
+]
 
 // Default message if no custom message is provided
 const defaultMessage = 'Emergency Alert! Please assist immediately.';
