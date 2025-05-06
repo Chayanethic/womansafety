@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency SOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #2c3e50;
+            color: #333;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 1.5rem;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 1.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #c0392b;
+        }
+        textarea::placeholder {
+            color: #95a5a6;
+        }
+        .sos-button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: #c0392b;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: background 0.2s, transform 0.2s;
+        }
+        .sos-button:hover {
+            background: #a93226;
+            transform: scale(1.03);
+        }
+        .sos-button:active {
+            transform: scale(0.98);
+        }
+        #status {
+            margin-top: 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        #status.success {
+            color: #27ae60;
+        }
+        #status.error {
+            color: #c0392b;
+        }
+        @media (max-width: 500px) {
+            .container {
+                padding: 1.5rem;
+            }
+            h2 {
+                font-size: 1.5rem;
+            }
+            .sos-button {
+                padding: 12px 25px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Emergency SOS</h2>
+        <textarea id="customMessage" placeholder="Enter custom message (optional)"></textarea>
+        <button class="sos-button" onclick="triggerSOS()">SOS</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        async function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject('Geolocation is not supported by your browser.');
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        const locationText = `Location: (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+                        const mapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                        resolve({ location: locationText, mapsUrl });
+                    },
+                    (error) => {
+                        reject('Unable to retrieve location. Please allow location access.');
+                    }
+                );
+            });
+        }
+
+        async function triggerSOS() {
+            const customMessage = document.getElementById('customMessage').value.trim();
+            const status = document.getElementById('status');
+
+            status.textContent = 'Processing SOS...';
+            status.className = '';
+
+            try {
+                const { location, mapsUrl } = await getLocation();
+
+                // Send SMS
+                const smsResponse = await fetch('/send-sms', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: customMessage, location, mapsUrl }),
+                });
+
+                // Send Call
+                const callResponse = await fetch('/make-call', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: customMessage, location, mapsUrl }),
+                });
+
+                const smsResult = await smsResponse.json();
+                const callResult = await callResponse.json();
+
+                if (smsResponse.ok && callResponse.ok) {
+                    status.textContent = 'SOS triggered: SMS and call sent successfully!';
+                    status.className = 'success';
+                } else {
+                    status.textContent = `Error: SMS - ${smsResult.error || 'Unknown'}, Call - ${callResult.error || 'Unknown'}`;
+                    status.className = 'error';
+                }
+            } catch (error) {
+                status.textContent = error || 'Failed to trigger SOS. Please try again.';
+                status.className = 'error';
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
