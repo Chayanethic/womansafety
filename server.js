@@ -2,12 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const twilio = require('twilio');
 const app = express();
-const port = 3000;
 
 // Twilio credentials from .env
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+
+// Validate environment variables
+if (!accountSid || !authToken || !twilioNumber) {
+    console.error('Missing Twilio credentials in environment variables.');
+    process.exit(1);
+}
 
 // Predefined recipient numbers (replace with actual numbers in E.164 format)
 const recipientNumbers = [
@@ -22,7 +27,7 @@ const client = twilio(accountSid, authToken);
 app.use(express.json());
 app.use(express.static('public')); // Serve static files from 'public' folder
 
-app.post('/send-sms', async (req, res) => {
+app.post('/api/send-sms', async (req, res) => {
     const { message, location, mapsUrl } = req.body;
 
     const finalMessage = (message || defaultMessage) + ` ${location} Map: ${mapsUrl}`;
@@ -36,14 +41,14 @@ app.post('/send-sms', async (req, res) => {
             })
         );
         await Promise.all(promises);
-        res.json({ success: true });
+        res.status(200).json({ success: true });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to send SMS' });
+        console.error('SMS Error:', error);
+        res.status(500).json({ error: `Failed to send SMS: ${error.message}` });
     }
 });
 
-app.post('/make-call', async (req, res) => {
+app.post('/api/make-call', async (req, res) => {
     const { message, location, mapsUrl } = req.body;
 
     const finalMessage = (message || defaultMessage) + ` Location: ${location}. View on Google Maps at ${mapsUrl.replace('https://', '')}.`;
@@ -57,13 +62,16 @@ app.post('/make-call', async (req, res) => {
             })
         );
         await Promise.all(promises);
-        res.json({ success: true });
+        res.status(200).json({ success: true });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to initiate call' });
+        console.error('Call Error:', error);
+        res.status(500).json({ error: `Failed to initiate call: ${error.message}` });
     }
 });
 
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+// Health check endpoint for debugging
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'Server is running' });
 });
+
+module.exports = app;

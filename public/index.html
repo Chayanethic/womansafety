@@ -136,7 +136,7 @@
                 const { location, mapsUrl } = await getLocation();
 
                 // Send SMS
-                const smsResponse = await fetch('/send-sms', {
+                const smsResponse = await fetch('/api/send-sms', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -144,14 +144,28 @@
                     body: JSON.stringify({ message: customMessage, location, mapsUrl }),
                 });
 
+                // Log response for debugging
+                if (!smsResponse.ok) {
+                    const text = await smsResponse.text();
+                    console.error('SMS Response:', text);
+                    throw new Error(`SMS request failed: ${smsResponse.status}`);
+                }
+
                 // Send Call
-                const callResponse = await fetch('/make-call', {
+                const callResponse = await fetch('/api/make-call', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ message: customMessage, location, mapsUrl }),
                 });
+
+                // Log response for debugging
+                if (!callResponse.ok) {
+                    const text = await callResponse.text();
+                    console.error('Call Response:', text);
+                    throw new Error(`Call request failed: ${callResponse.status}`);
+                }
 
                 const smsResult = await smsResponse.json();
                 const callResult = await callResponse.json();
@@ -164,9 +178,9 @@
                     status.className = 'error';
                 }
             } catch (error) {
-                status.textContent = error || 'Failed to trigger SOS. Please try again.';
+                status.textContent = error.message || 'Failed to trigger SOS. Please try again.';
                 status.className = 'error';
-                console.error(error);
+                console.error('Error:', error);
             }
         }
     </script>
