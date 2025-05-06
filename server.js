@@ -16,8 +16,7 @@ if (!accountSid || !authToken || !twilioNumber) {
 
 // Predefined recipient numbers (replace with actual numbers in E.164 format)
 const recipientNumbers = [
-    '+1234567890',
-    '+0987654321'
+    '+919883995198"
 ];
 
 // Default message if no custom message is provided
